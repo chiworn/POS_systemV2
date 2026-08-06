@@ -8,20 +8,7 @@
     },
     "routes": [
         {
-            "src": "/build/(.*)",
-            "dest": "/public/build/$1"
-        },
-        {
-            "src": "/storage/(.*)",
-            "dest": "/public/storage/$1"
-        },
-        {
-            "src": "/favicon.ico",
-            "dest": "/public/favicon.ico"
-        },
-        {
-            "src": "/robots.txt",
-            "dest": "/public/robots.txt"
+            "handle": "filesystem"
         },
         {
             "src": "/(.*)",
@@ -31,7 +18,8 @@
     "env": {
         "APP_NAME": "System POS",
         "APP_ENV": "production",
-        "APP_DEBUG": "false",
+        "APP_KEY": "base64:ux3eLoCP+27TGfF7t5/3qHwNkIH+8Euzgec52tJqVTY=",
+        "APP_DEBUG": "true",
         "LOG_CHANNEL": "stderr",
         "SESSION_DRIVER": "cookie",
         "CACHE_STORE": "array"
