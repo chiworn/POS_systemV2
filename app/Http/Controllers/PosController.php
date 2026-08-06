@@ -1,0 +1,171 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Category;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class PosController extends Controller
+{
+    /**
+     * Display the POS screen.
+     */
+    public function index(Request $request)
+    {
+        $query = Product::with('category')->where('stock', '>', 0)->latest();
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('barcode', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        $products = $query->paginate(12)->withQueryString();
+        $categories = Category::all();
+        
+        return Inertia::render('backend/Pos/Index', [
+            'products' => $products,
+            'categories' => $categories,
+            'filters' => $request->only(['search', 'category_id']),
+        ]);
+    }
+
+    /**
+     * Process checkout and create order.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'cart' => 'required|array|min:1',
+            'cart.*.id' => 'required|exists:products,id',
+            'cart.*.quantity' => 'required|integer|min:1',
+            'cart.*.price' => 'required|numeric|min:0',
+            'subtotal' => 'required|numeric|min:0',
+            'tax' => 'required|numeric|min:0',
+            'discount' => 'required|numeric|min:0',
+            'grand_total' => 'required|numeric|min:0',
+            'customer_id' => 'nullable|exists:customers,id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Check stock again to prevent overselling
+            foreach ($validated['cart'] as $item) {
+                $product = Product::lockForUpdate()->find($item['id']);
+                if ($product->stock < $item['quantity']) {
+                    throw new \Exception("Not enough stock for {$product->name}. Only {$product->stock} available.");
+                }
+            }
+
+            // Create Order
+            $order = Order::create([
+                'user_id' => $request->user()->id,
+                'customer_id' => $validated['customer_id'] ?? null,
+                'invoice_no' => 'INV-' . strtoupper(Str::random(8)),
+                'order_date' => now(),
+                'subtotal' => $validated['subtotal'],
+                'tax' => $validated['tax'],
+                'discount' => $validated['discount'],
+                'grand_total' => $validated['grand_total'],
+                'status' => 'completed',
+            ]);
+
+            // Create Order Items and update stock
+            foreach ($validated['cart'] as $item) {
+                $subtotal = $item['price'] * $item['quantity'];
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item['id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'subtotal' => $subtotal,
+                ]);
+
+                // Reduce stock
+                Product::where('id', $item['id'])->decrement('stock', $item['quantity']);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Order completed successfully! Invoice: ' . $order->invoice_no);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Display sales history for the user.
+     */
+    public function history(Request $request)
+    {
+        $query = Order::with(['items.product', 'user', 'customer'])->latest();
+        $user = $request->user();
+
+        // If Cashier, only show their own orders
+        if ($user->role && $user->role->name === 'Cashier') {
+            $query->where('user_id', $user->id);
+        } else {
+            // Admin/Manager can filter by Cashier
+            if ($request->filled('cashier_id')) {
+                $query->where('user_id', $request->cashier_id);
+            }
+        }
+
+        // Search by Invoice, Customer Name, or Cashier Name
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('invoice_no', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('user', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Date Filter
+        if ($request->filled('date')) {
+            if ($request->date === 'today') {
+                $query->whereDate('order_date', today());
+            } elseif ($request->date === 'week') {
+                $query->whereBetween('order_date', [now()->startOfWeek(), now()->endOfWeek()]);
+            } elseif ($request->date === 'month') {
+                $query->whereMonth('order_date', now()->month)
+                      ->whereYear('order_date', now()->year);
+            }
+        }
+
+        $orders = $query->paginate(10)->withQueryString();
+
+        // Pass cashiers list for the filter dropdown if user is not a cashier
+        $cashiers = [];
+        if (!$user->role || $user->role->name !== 'Cashier') {
+            $cashiers = \App\Models\User::whereHas('role', function($q) {
+                $q->where('name', 'Cashier');
+            })->get(['id', 'name']);
+        }
+
+        return Inertia::render('backend/Pos/History', [
+            'orders' => $orders,
+            'cashiers' => $cashiers,
+            'filters' => $request->only(['search', 'cashier_id', 'date']),
+        ]);
+    }
+}

@@ -1,0 +1,35 @@
+<?php
+
+/*
+|--------------------------------------------------------------------------
+| Vercel Serverless Entry Point
+|--------------------------------------------------------------------------
+|
+| This file handles requests for Vercel serverless deployment by ensuring
+| writable directories in /tmp and forwarding to public/index.php.
+|
+*/
+
+$tmpStorage = '/tmp/storage';
+
+if (!is_dir($tmpStorage . '/framework/views')) {
+    @mkdir($tmpStorage . '/framework/views', 0755, true);
+}
+if (!is_dir($tmpStorage . '/framework/cache/data')) {
+    @mkdir($tmpStorage . '/framework/cache/data', 0755, true);
+}
+if (!is_dir($tmpStorage . '/framework/sessions')) {
+    @mkdir($tmpStorage . '/framework/sessions', 0755, true);
+}
+if (!is_dir($tmpStorage . '/logs')) {
+    @mkdir($tmpStorage . '/logs', 0755, true);
+}
+
+// Override Laravel storage path for Vercel environment
+putenv("VIEW_COMPILED_PATH={$tmpStorage}/framework/views");
+putenv("APP_CONFIG_CACHE={$tmpStorage}/config.php");
+putenv("APP_ROUTES_CACHE={$tmpStorage}/routes.php");
+putenv("APP_SERVICES_CACHE={$tmpStorage}/services.php");
+putenv("APP_PACKAGES_CACHE={$tmpStorage}/packages.php");
+
+require __DIR__ . '/../public/index.php';
