@@ -21,6 +21,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/pos', [App\Http\Controllers\PosController::class, 'index'])->name('pos.index');
         Route::post('/pos/checkout', [App\Http\Controllers\PosController::class, 'store'])->name('pos.checkout');
         Route::get('/pos/history', [App\Http\Controllers\PosController::class, 'history'])->name('pos.history');
+        Route::post('/pos/khqr/generate', [App\Http\Controllers\PosController::class, 'generateKhqr'])->name('pos.khqr.generate');
+        Route::post('/pos/khqr/check', [App\Http\Controllers\PosController::class, 'checkBakongTransaction'])->name('pos.khqr.check');
     });
 
     Route::middleware('role:Admin,Manager')->group(function () {

@@ -275,7 +275,22 @@
         "cash_received": "ប្រាក់ទទួលបាន",
         "change": "ប្រាក់អាប់",
         "hold": "ផ្អាកការលក់",
-        "empty_cart": "កន្ត្រកទំនិញទទេ"
+        "empty_cart": "កន្ត្រកទំនិញទទេ",
+        "payment_option": "ជម្រើសទូទាត់",
+        "select_payment": "ជ្រើសរើសវិធីសាស្ត្រទូទាត់",
+        "cash": "សាច់ប្រាក់",
+        "khqr": "KHQR (បាគង)",
+        "bank": "ធនាគារ / KHQR",
+        "scan_to_pay": "ស្កែន KHQR ជាមួយកម្មវិធី Bakong ឬកម្មវិធីធនាគារចល័ត",
+        "merchant": "ឈ្មោះអាជីវកម្ម",
+        "amount_usd": "ចំនួនទឹកប្រាក់ (USD)",
+        "amount_khr": "ចំនួនទឹកប្រាក់ (KHR)",
+        "exact_amount": "គ្រប់ចំនួន",
+        "confirm_payment": "បញ្ជាក់ និងបញ្ចប់ការបញ្ជាទិញ",
+        "insufficient_cash": "ប្រាក់ទទួលបានតិចជាងចំនួនសរុប",
+        "cash_received_placeholder": "0.00",
+        "processing_payment": "កំពុងដំណើរការទូទាត់...",
+        "payment_success": "ការទូទាត់បានជោគជ័យ!"
     },
     "settings": {
         "title": "ការកំណត់ទូទៅ",

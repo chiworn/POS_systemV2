@@ -1,9 +1,10 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import InvoiceReceiptModal from '@/Components/InvoiceReceiptModal.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Clock, Receipt, User, CheckCircle2, ChevronLeft, ChevronRight, Search, Users } from '@lucide/vue';
+import { Clock, Receipt, User, CheckCircle2, ChevronLeft, ChevronRight, Search, Users, Banknote, QrCode, Printer } from '@lucide/vue';
 import Pagination from '@/Components/Pagination.vue';
 
 const { t } = useI18n();
@@ -19,6 +20,14 @@ const isAdmin = computed(() => props.cashiers && props.cashiers.length > 0);
 const search = ref(props.filters?.search || '');
 const cashier_id = ref(props.filters?.cashier_id || '');
 const date = ref(props.filters?.date || '');
+
+const selectedOrderForInvoice = ref(null);
+const showInvoiceModal = ref(false);
+
+const openInvoiceModal = (order) => {
+    selectedOrderForInvoice.value = order;
+    showInvoiceModal.value = true;
+};
 
 let searchTimeout = null;
 watch([search, cashier_id, date], ([newSearch, newCashier, newDate]) => {
@@ -112,10 +121,12 @@ const formatDate = (dateStr) => {
                                 <th class="px-4 py-3 font-semibold">{{ t('history.date_time') }}</th>
                                 <th class="px-4 py-3 font-semibold">{{ t('history.cashier') }}</th>
                                 <th v-if="isAdmin" class="px-4 py-3 font-semibold">{{ t('history.customer') }}</th>
+                                <th class="px-4 py-3 font-semibold">{{ t('history.payment_method') }}</th>
                                 <th v-if="isAdmin" class="px-4 py-3 font-semibold">{{ t('history.subtotal') }}</th>
                                 <th v-if="isAdmin" class="px-4 py-3 font-semibold">{{ t('history.discount') }}</th>
                                 <th class="px-4 py-3 font-semibold">{{ t('history.grand_total') }}</th>
                                 <th class="px-4 py-3 font-semibold text-center">{{ t('history.status') }}</th>
+                                <th class="px-4 py-3 font-semibold text-center">Print</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -139,6 +150,16 @@ const formatDate = (dateStr) => {
                                         {{ order.customer?.name || 'Walk-in' }}
                                     </div>
                                 </td>
+                                <td class="px-4 py-3">
+                                    <span v-if="order.payment_method === 'khqr' || order.payment_method === 'bank'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50">
+                                        <QrCode class="w-3.5 h-3.5" />
+                                        {{ t('pos.khqr') }}
+                                    </span>
+                                    <span v-else class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">
+                                        <Banknote class="w-3.5 h-3.5" />
+                                        {{ t('pos.cash') }}
+                                    </span>
+                                </td>
                                 <td v-if="isAdmin" class="px-4 py-3 text-gray-600 dark:text-gray-300">${{ Number(order.subtotal).toFixed(2) }}</td>
                                 <td v-if="isAdmin" class="px-4 py-3 text-red-500 dark:text-red-400">-${{ Number(order.discount).toFixed(2) }}</td>
                                 <td class="px-4 py-3 font-bold text-gray-800 dark:text-gray-100">${{ Number(order.grand_total).toFixed(2) }}</td>
@@ -148,9 +169,14 @@ const formatDate = (dateStr) => {
                                         {{ order.status === 'completed' ? t('history.completed') : order.status }}
                                     </span>
                                 </td>
+                                <td class="px-4 py-3 text-center">
+                                    <button @click="openInvoiceModal(order)" title="Print Invoice Receipt" class="p-1.5 rounded-md text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors">
+                                        <Printer class="w-4 h-4" />
+                                    </button>
+                                </td>
                             </tr>
                             <tr v-if="orders.data.length === 0">
-                                <td :colspan="isAdmin ? 8 : 5" class="px-4 py-12 text-center text-gray-400 dark:text-gray-500">
+                                <td :colspan="isAdmin ? 10 : 7" class="px-4 py-12 text-center text-gray-400 dark:text-gray-500">
                                     <Receipt class="w-10 h-10 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                                     <p>{{ t('history.no_transactions') }}</p>
                                 </td>
@@ -163,5 +189,8 @@ const formatDate = (dateStr) => {
                 <Pagination :data="orders" />
             </div>
         </div>
+
+        <!-- PRINTABLE INVOICE RECEIPT MODAL -->
+        <InvoiceReceiptModal :show="showInvoiceModal" :order="selectedOrderForInvoice" @close="showInvoiceModal = false" />
     </AuthenticatedLayout>
 </template>

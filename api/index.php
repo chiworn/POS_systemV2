@@ -32,4 +32,18 @@ putenv("APP_ROUTES_CACHE={$tmpStorage}/routes.php");
 putenv("APP_SERVICES_CACHE={$tmpStorage}/services.php");
 putenv("APP_PACKAGES_CACHE={$tmpStorage}/packages.php");
 
+// Set up SQLite database in /tmp if using SQLite
+if (getenv('DB_CONNECTION') === 'sqlite' || !getenv('DB_CONNECTION')) {
+    $sqliteDb = $tmpStorage . '/database.sqlite';
+    if (!file_exists($sqliteDb)) {
+        $sourceDb = __DIR__ . '/../database/database.sqlite';
+        if (file_exists($sourceDb) && filesize($sourceDb) > 0) {
+            @copy($sourceDb, $sqliteDb);
+        } else {
+            @touch($sqliteDb);
+        }
+    }
+    putenv("DB_DATABASE={$sqliteDb}");
+}
+
 require __DIR__ . '/../public/index.php';

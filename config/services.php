@@ -41,4 +41,11 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', 'http://127.0.0.1:8000/auth/google/callback'),
     ],
 
+    'bakong' => [
+        'token' => env('BAKONG_TOKEN'),
+        'account_id' => env('BAKONG_ACCOUNT_ID', 'chouernchyworn_kong@bkrt'),
+        'merchant_name' => env('BAKONG_MERCHANT_NAME', 'CHOUERNCHYWORN KONG'),
+        'merchant_city' => env('BAKONG_MERCHANT_CITY', 'Phnom Penh'),
+    ],
+
 ];

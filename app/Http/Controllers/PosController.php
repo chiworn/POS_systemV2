@@ -56,6 +56,9 @@ class PosController extends Controller
             'discount' => 'required|numeric|min:0',
             'grand_total' => 'required|numeric|min:0',
             'customer_id' => 'nullable|exists:customers,id',
+            'payment_method' => 'nullable|string|in:cash,khqr,bank',
+            'cash_received' => 'nullable|numeric|min:0',
+            'change_amount' => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -79,6 +82,7 @@ class PosController extends Controller
                 'tax' => $validated['tax'],
                 'discount' => $validated['discount'],
                 'grand_total' => $validated['grand_total'],
+                'payment_method' => $validated['payment_method'] ?? 'cash',
                 'status' => 'completed',
             ]);
 
@@ -100,7 +104,16 @@ class PosController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Order completed successfully! Invoice: ' . $order->invoice_no);
+            $loadedOrder = $order->load(['items.product', 'user', 'customer']);
+            if (isset($validated['cash_received'])) {
+                $loadedOrder->cash_received = $validated['cash_received'];
+                $loadedOrder->change_amount = $validated['change_amount'] ?? 0;
+            }
+
+            return redirect()->back()->with([
+                'success' => 'Order completed successfully! Invoice: ' . $order->invoice_no,
+                'order' => $loadedOrder,
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -167,5 +180,78 @@ class PosController extends Controller
             'cashiers' => $cashiers,
             'filters' => $request->only(['search', 'cashier_id', 'date']),
         ]);
+    }
+
+    /**
+     * Generate Bakong KHQR code payload and MD5.
+     */
+    public function generateKhqr(Request $request)
+    {
+        $validated = $request->validate([
+            'grand_total' => 'required|numeric|min:0.01',
+            'currency' => 'nullable|string|in:USD,KHR',
+        ]);
+
+        try {
+            $currencyStr = strtoupper($request->currency ?? 'KHR');
+            $grandTotalUsd = (float) $validated['grand_total'];
+            $exchangeRate = 4100;
+
+            if ($currencyStr === 'KHR') {
+                $amount = (float) round($grandTotalUsd * $exchangeRate);
+                $khqrCurrency = \KHQR\Helpers\KHQRData::CURRENCY_KHR;
+            } else {
+                $amount = (float) number_format($grandTotalUsd, 2, '.', '');
+                $khqrCurrency = \KHQR\Helpers\KHQRData::CURRENCY_USD;
+            }
+
+            $individualInfo = new \KHQR\Models\IndividualInfo(
+                bakongAccountID: config('services.bakong.account_id', 'chouernchyworn_kong@bkrt'),
+                merchantName: config('services.bakong.merchant_name', 'CHOUERNCHYWORN KONG'),
+                merchantCity: config('services.bakong.merchant_city', 'Phnom Penh'),
+                currency: $khqrCurrency,
+                amount: $amount,
+                billNumber: 'INV-' . strtoupper(Str::random(6))
+            );
+
+            $response = \KHQR\BakongKHQR::generateIndividual($individualInfo);
+
+            return response()->json([
+                'status' => 'success',
+                'qr' => $response->data['qr'],
+                'md5' => $response->data['md5'],
+                'merchant_name' => config('services.bakong.merchant_name', 'CHOUERNCHYWORN KONG'),
+                'account_id' => config('services.bakong.account_id', 'chouernchyworn_kong@bkrt'),
+                'amount_usd' => $grandTotalUsd,
+                'amount_khr' => round($grandTotalUsd * $exchangeRate),
+                'currency' => $currencyStr,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Check transaction status by MD5 with Bakong API.
+     */
+    public function checkBakongTransaction(Request $request)
+    {
+        $request->validate([
+            'md5' => 'required|string',
+        ]);
+
+        try {
+            $token = config('services.bakong.token');
+            if (!$token) {
+                return response()->json(['error' => 'BAKONG_TOKEN is not configured in .env'], 400);
+            }
+
+            $bakong = new \KHQR\BakongKHQR($token);
+            $result = $bakong->checkTransactionByMD5($request->md5);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }

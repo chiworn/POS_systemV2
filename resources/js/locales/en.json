@@ -275,7 +275,22 @@
         "cash_received": "Cash Received",
         "change": "Change",
         "hold": "Hold Order",
-        "empty_cart": "Cart is empty"
+        "empty_cart": "Cart is empty",
+        "payment_option": "Payment Option",
+        "select_payment": "Select Payment Method",
+        "cash": "Cash",
+        "khqr": "KHQR (Bakong)",
+        "bank": "Bank / KHQR",
+        "scan_to_pay": "Scan KHQR with Bakong or any Mobile Banking App",
+        "merchant": "Merchant Name",
+        "amount_usd": "Amount (USD)",
+        "amount_khr": "Amount (KHR)",
+        "exact_amount": "Exact Amount",
+        "confirm_payment": "Confirm & Complete Order",
+        "insufficient_cash": "Cash received is less than total amount",
+        "cash_received_placeholder": "0.00",
+        "processing_payment": "Processing Payment...",
+        "payment_success": "Payment Successful!"
     },
     "settings": {
         "title": "General Settings",

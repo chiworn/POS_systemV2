@@ -1,5 +1,6 @@
 {
     "version": 2,
+    "buildCommand": "npm run build",
     "outputDirectory": "public",
     "functions": {
         "api/index.php": {
@@ -11,6 +12,10 @@
             "handle": "filesystem"
         },
         {
+            "src": "/build/(.*)",
+            "dest": "/build/$1"
+        },
+        {
             "src": "/(.*)",
             "dest": "/api/index.php"
         }
@@ -19,7 +24,7 @@
         "APP_NAME": "System POS",
         "APP_ENV": "production",
         "APP_KEY": "base64:ux3eLoCP+27TGfF7t5/3qHwNkIH+8Euzgec52tJqVTY=",
-        "APP_DEBUG": "true",
+        "APP_DEBUG": "false",
         "LOG_CHANNEL": "stderr",
         "SESSION_DRIVER": "cookie",
         "CACHE_STORE": "array"

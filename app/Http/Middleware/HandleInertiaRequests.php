@@ -47,6 +47,11 @@ class HandleInertiaRequests extends Middleware
             ],
             'pendingRegistrations' => $pendingRegistrations,
             'settings' => $settings,
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'order' => fn () => $request->session()->get('order'),
+            ],
         ];
     }
 }
