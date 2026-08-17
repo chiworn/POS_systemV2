@@ -43,13 +43,14 @@ class SettingController extends Controller
         ];
 
         if ($request->hasFile('store_logo')) {
-            // Remove old logo if exists
-            if ($settings->store_logo && Storage::disk('public')->exists(str_replace('storage/', '', $settings->store_logo))) {
-                Storage::disk('public')->delete(str_replace('storage/', '', $settings->store_logo));
+            // Remove old logo from S3 if exists
+            if ($settings->store_logo) {
+                $oldPath = str_replace(Storage::disk('s3')->url(''), '', $settings->store_logo);
+                Storage::disk('s3')->delete($oldPath);
             }
 
-            $path = $request->file('store_logo')->store('logos', 'public');
-            $data['store_logo'] = $path;
+            $path = $request->file('store_logo')->store('logos', 's3');
+            $data['store_logo'] = Storage::disk('s3')->url($path);
         }
 
         $settings->update($data);

@@ -39,11 +39,11 @@ class DashboardController extends Controller
                                 ->get(['id', 'invoice_no', 'customer_id', 'grand_total', 'status', 'order_date']);
 
             $currentYear = Carbon::now()->year;
-            $monthlySales = Order::selectRaw('MONTH(order_date) as month, SUM(grand_total) as total')
+            $monthlySales = Order::selectRaw('EXTRACT(MONTH FROM order_date)::int as month, SUM(grand_total) as total')
                 ->where('user_id', $user->id)
                 ->whereYear('order_date', $currentYear)
-                ->groupByRaw('MONTH(order_date)')
-                ->orderByRaw('MONTH(order_date)')
+                ->groupByRaw('EXTRACT(MONTH FROM order_date)')
+                ->orderByRaw('EXTRACT(MONTH FROM order_date)')
                 ->pluck('total', 'month')
                 ->toArray();
 
@@ -75,10 +75,10 @@ class DashboardController extends Controller
         $totalSuppliers = Supplier::count();
 
         // ── Monthly Sales Chart (current year) ───────────────────
-        $monthlySales = Order::selectRaw('MONTH(order_date) as month, SUM(grand_total) as total')
+        $monthlySales = Order::selectRaw('EXTRACT(MONTH FROM order_date)::int as month, SUM(grand_total) as total')
             ->whereYear('order_date', $currentYear)
-            ->groupByRaw('MONTH(order_date)')
-            ->orderByRaw('MONTH(order_date)')
+            ->groupByRaw('EXTRACT(MONTH FROM order_date)')
+            ->orderByRaw('EXTRACT(MONTH FROM order_date)')
             ->pluck('total', 'month')
             ->toArray();
 
@@ -89,10 +89,10 @@ class DashboardController extends Controller
         }
 
         // ── Monthly Purchase Chart (current year) ────────────────
-        $monthlyPurchases = Purchase::selectRaw('MONTH(purchase_date) as month, SUM(total) as total')
+        $monthlyPurchases = Purchase::selectRaw('EXTRACT(MONTH FROM purchase_date)::int as month, SUM(total) as total')
             ->whereYear('purchase_date', $currentYear)
-            ->groupByRaw('MONTH(purchase_date)')
-            ->orderByRaw('MONTH(purchase_date)')
+            ->groupByRaw('EXTRACT(MONTH FROM purchase_date)')
+            ->orderByRaw('EXTRACT(MONTH FROM purchase_date)')
             ->pluck('total', 'month')
             ->toArray();
 

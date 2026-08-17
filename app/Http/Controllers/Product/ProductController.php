@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ProductController extends Controller
@@ -55,7 +56,8 @@ class ProductController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('products', 'public');
+            $path = $request->file('image')->store('products', 's3');
+            $validated['image'] = Storage::disk('s3')->url($path);
         }
 
         Product::create($validated);
@@ -81,11 +83,13 @@ class ProductController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($product->image && \Storage::disk('public')->exists($product->image)) {
-                \Storage::disk('public')->delete($product->image);
+            // Delete old image from S3 if exists
+            if ($product->image) {
+                $oldPath = str_replace(Storage::disk('s3')->url(''), '', $product->image);
+                Storage::disk('s3')->delete($oldPath);
             }
-            $validated['image'] = $request->file('image')->store('products', 'public');
+            $path = $request->file('image')->store('products', 's3');
+            $validated['image'] = Storage::disk('s3')->url($path);
         }
 
         $product->update($validated);
@@ -95,8 +99,9 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
-        if ($product->image && \Storage::disk('public')->exists($product->image)) {
-            \Storage::disk('public')->delete($product->image);
+        if ($product->image) {
+            $oldPath = str_replace(Storage::disk('s3')->url(''), '', $product->image);
+            Storage::disk('s3')->delete($oldPath);
         }
 
         $product->delete();
