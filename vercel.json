@@ -34,8 +34,11 @@
         "APP_ENV": "production",
         "APP_KEY": "base64:ux3eLoCP+27TGfF7t5/3qHwNkIH+8Euzgec52tJqVTY=",
         "APP_DEBUG": "false",
+        "APP_URL": "https://pos-system-v2.vercel.app",
+        "ASSET_URL": "https://pos-system-v2.vercel.app",
         "LOG_CHANNEL": "stderr",
         "SESSION_DRIVER": "cookie",
-        "CACHE_STORE": "array"
+        "CACHE_STORE": "array",
+        "TRUSTED_PROXIES": "*"
     }
 }

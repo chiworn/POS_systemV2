@@ -32,6 +32,16 @@ putenv("APP_ROUTES_CACHE={$tmpStorage}/routes.php");
 putenv("APP_SERVICES_CACHE={$tmpStorage}/services.php");
 putenv("APP_PACKAGES_CACHE={$tmpStorage}/packages.php");
 
+// Force HTTPS: Vercel terminates SSL and forwards via X-Forwarded-Proto
+// Without this, Laravel generates http:// URLs causing blank pages (mixed content)
+if (
+    isset($_SERVER['HTTP_X_FORWARDED_PROTO']) &&
+    $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https'
+) {
+    $_SERVER['HTTPS'] = 'on';
+    $_SERVER['SERVER_PORT'] = 443;
+}
+
 // Set up SQLite database in /tmp if using SQLite
 if (getenv('DB_CONNECTION') === 'sqlite' || !getenv('DB_CONNECTION')) {
     $sqliteDb = $tmpStorage . '/database.sqlite';
