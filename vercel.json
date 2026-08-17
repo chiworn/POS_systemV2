@@ -9,15 +9,20 @@
     },
     "routes": [
         {
-            "src": "^/(.*\\.php)$",
-            "dest": "/api/index.php"
-        },
-        {
-            "handle": "filesystem"
-        },
-        {
-            "src": "/build/(.*)",
+            "src": "^/build/(.*)$",
             "dest": "/build/$1"
+        },
+        {
+            "src": "^/favicon\\.ico$",
+            "dest": "/favicon.ico"
+        },
+        {
+            "src": "^/robots\\.txt$",
+            "dest": "/robots.txt"
+        },
+        {
+            "src": "^/storage/(.*)$",
+            "dest": "/storage/$1"
         },
         {
             "src": "/(.*)",
